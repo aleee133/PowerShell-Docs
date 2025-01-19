@@ -16,7 +16,7 @@
     record so a user can understand what was called when the command failed.
 .PARAMETER Intent
     Specifies what the `gh` command was supposed to do at a high level. This becomes part of the
-    expection messge.
+    exception message.
 .PARAMETER ErrorID
     Specifies an identifier for the error record.
 .EXAMPLE
@@ -32,10 +32,10 @@
     New-CliErrorRecord @ErrorInfo
     ```
 
-    ```output
-    Exception             : 
+    ```Output
+    Exception             :
         Type       : System.ApplicationException
-        TargetSite : 
+        TargetSite :
             Name          : ThrowTerminatingError
             DeclaringType : System.Management.Automation.MshCommandRuntime, System.Management.Automation, Version=7.2.4.500, Culture=neutral, PublicKeyToken=31bf3856ad364e35
             MemberType    : Method
@@ -46,11 +46,11 @@
 
         Source     : System.Management.Automation
         HResult    : -2146232832
-        StackTrace : 
+        StackTrace :
     at System.Management.Automation.MshCommandRuntime.ThrowTerminatingError(ErrorRecord errorRecord)
     CategoryInfo          : PermissionDenied: (:String) [Test-Authorization.ps1], ApplicationException
     FullyQualifiedErrorId : GHA.NotPermittedToTarget,Test-Authorization.ps1
-    InvocationInfo        : 
+    InvocationInfo        :
         MyCommand        : Test-Authorization.ps1
         ScriptLineNumber : 1
         OffsetInLine     : 1
@@ -74,10 +74,23 @@ function New-CliErrorRecord {
         [string]$Intent,
         [string]$ErrorID
     )
-    
-    begin {}
-  
+
+    begin {
+        $AcceptableErrors = @(
+            @{
+                Pattern = 'HTTP 403: .+ rate limit'
+                Message = 'Rate limited by GitHub API; unable to continue.'
+            }
+        )
+    }
+
     process {
+        foreach ($AcceptableError in $AcceptableErrors) {
+            if ($ResultString -match $AcceptableError.Pattern) {
+                Write-Host -ForegroundColor DarkMagenta $AcceptableError.Message
+                exit
+            }
+        }
         $Message = New-Object -TypeName System.Text.StringBuilder
         $null = $Message.AppendLine("GitHub API call to $Intent failed with exit code ${ExitCode}:")
         $null = $Message.AppendLine("    $ResultString")
@@ -91,6 +104,6 @@ function New-CliErrorRecord {
             $TargetObject
         )
     }
-  
+
     end {}
 }

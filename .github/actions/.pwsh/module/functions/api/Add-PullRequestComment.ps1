@@ -16,14 +16,14 @@
 .PARAMETER BodyText
     The raw markdown text to write as a comment on the PR.
 .PARAMETER BodyFile
-    The  path to the markdown file to write as a comment on the PR. Due to the way GitHub mistreats
+    The path to the markdown file to write as a comment on the PR. Due to the way GitHub mistreats
     soft line breaks as hard line breaks in comments (unlike files), the markdown in a body file is
     converted to HTML when writing the comment. From the user perspective, it's a normal comment.
 .EXAMPLE
     Add-PullRequestComment -Owner foo -Repo bar -Number 10 -BodyText @'
     Hello, _world_! How are **you**?
     '@
-    
+
     The cmdlet adds a comment to `https://github/foo/bar/pull/10`, rendering the body text' markdown
     in the comment.
 .EXAMPLE
@@ -47,7 +47,7 @@ function Add-PullRequestComment {
         [Parameter(Mandatory, ParameterSetName = 'File')]
         [string]$BodyFile
     )
-  
+
     begin {
         $AddCommentParams = @(
             'pr', 'comment', $Number
@@ -61,11 +61,11 @@ function Add-PullRequestComment {
             $AddCommentParams += $BodyFile
         }
     }
-  
+
     process {
         [string]$ResultString = gh @AddCommentParams 2>&1
         $ExitCode = $LASTEXITCODE
-  
+
         if ($ExitCode -ne 0) {
             $ErrorParameters = @{
                 ResultString = $ResultString
@@ -75,11 +75,18 @@ function Add-PullRequestComment {
                 ErrorID      = 'GitHub.ApiPostFailure'
             }
             $Record = New-CliErrorRecord @ErrorParameters
-            $PSCmdlet.ThrowTerminatingError($Record)
+
+            # If an error record is returned, the error is unhandled and the action should fail.
+            # If no error record is returned, the error is acceptable and the action should exit.
+            if ($Record) {
+                $PSCmdlet.ThrowTerminatingError($Record)
+            } else {
+                exit
+            }
         }
-  
+
         $ResultString
     }
-  
+
     end {}
 }

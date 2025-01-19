@@ -52,6 +52,7 @@
         'Format-GHAConsoleText'
         'Get-ActionScriptParameter'
         'Get-GHAConsoleError'
+        'Get-StaleDocument'
         'Get-VersionedContentChangeStatus'
         'Get-VersionedContentTableColumnWidth'
         'New-CliErrorRecord'
@@ -100,4 +101,4 @@
       } # End of PSData hashtable
 
     } # End of PrivateData hashtable
-  }
+}
